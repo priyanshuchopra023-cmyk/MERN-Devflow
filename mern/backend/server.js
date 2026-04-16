@@ -7,10 +7,7 @@ const app = express();
 
 // ── Middleware ──────────────────────────────
 app.use(cors({
-  origin: [
-    "http://localhost:3000",              // local frontend
-    "https://mern-devflow.vercel.app"     // deployed frontend
-  ],
+  origin: true,          // ✅ allow all origins (fixes Vercel CORS issue)
   credentials: true
 }));
 
