@@ -6,7 +6,14 @@ const db = require("./db");
 const app = express();
 
 // ── Middleware ──────────────────────────────
-app.use(cors({ origin: "http://localhost:3000", credentials: true }));
+app.use(cors({
+  origin: [
+    "http://localhost:3000",              // local frontend
+    "https://mern-devflow.vercel.app"     // deployed frontend
+  ],
+  credentials: true
+}));
+
 app.use(express.json());
 
 // ── Routes ──────────────────────────────────
@@ -19,7 +26,7 @@ app.use("/api/auth",     require("./routes/auth"));
 // ── Health check ────────────────────────────
 app.get("/", (req, res) => res.json({ message: "DevFlow API running 🚀" }));
 
-// ── Connect to MongoDB & start server ───
+// ── Connect to MongoDB & start server ───────
 const PORT = process.env.PORT || 5000;
 
 db.connectDB()
