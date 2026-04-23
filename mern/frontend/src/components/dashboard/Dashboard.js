@@ -3,6 +3,101 @@ import { useNavigate } from "react-router-dom";
 import { getProjects, getTasks, getDocs, getRepos } from "../../api/api";
 import { useAuth } from "../../context/AuthContext";
 
+/* ── Stat card accent configs ── */
+const STAT_CONFIG = [
+  {
+    label: "Projects",
+    key: "projects",
+    sub: "Active workspaces",
+    color: "purple",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <rect x="2" y="2" width="6" height="7" rx="1.5" fill="currentColor" opacity=".9"/>
+        <rect x="10" y="2" width="6" height="4" rx="1.5" fill="currentColor" opacity=".5"/>
+        <rect x="2" y="11" width="14" height="1.8" rx=".9" fill="currentColor" opacity=".4"/>
+        <rect x="2" y="14.2" width="9" height="1.8" rx=".9" fill="currentColor" opacity=".25"/>
+      </svg>
+    ),
+  },
+  {
+    label: "Tasks",
+    key: "tasks",
+    sub: "Across all boards",
+    color: "pink",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <path d="M3.5 5h11M3.5 9h8M3.5 13h5.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+        <circle cx="14" cy="13" r="3" fill="currentColor" opacity=".7"/>
+        <path d="M12.8 13l.9.9 1.5-1.5" stroke="white" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    ),
+  },
+  {
+    label: "Docs",
+    key: "docs",
+    sub: "Wiki pages",
+    color: "teal",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <rect x="3.5" y="1.5" width="11" height="15" rx="2" fill="currentColor" opacity=".18" stroke="currentColor" strokeWidth="1.3"/>
+        <path d="M6.5 6h5M6.5 9h5M6.5 12h3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+      </svg>
+    ),
+  },
+  {
+    label: "Repos",
+    key: "repos",
+    sub: "Linked repositories",
+    color: "amber",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <circle cx="4.5" cy="4" r="2" fill="currentColor" opacity=".9"/>
+        <circle cx="13.5" cy="4" r="2" fill="currentColor" opacity=".9"/>
+        <circle cx="4.5" cy="14" r="2" fill="currentColor" opacity=".9"/>
+        <path d="M4.5 6v6M4.5 12c0 1.2 1 2 2.5 2h2.5a2 2 0 0 0 2-2V6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+      </svg>
+    ),
+  },
+];
+
+const TASK_ROWS = [
+  { label: "To Do",       key: "todo",       colorVar: "--accent-purple", trackVar: "rgba(139,92,246,0.12)" },
+  { label: "In Progress", key: "inprogress",  colorVar: "--accent-amber",  trackVar: "rgba(245,158,11,0.12)"  },
+  { label: "Done",        key: "done",        colorVar: "--accent-teal",   trackVar: "rgba(20,184,166,0.12)"  },
+];
+
+function StatCard({ label, value, sub, color, icon, index }) {
+  return (
+    <div className={`stat-card ${color}`} style={{ animationDelay: `${index * 0.07}s` }}>
+      <div className="stat-card-inner">
+        <div className="stat-meta">
+          <div className="stat-label">{label}</div>
+          <div className={`stat-icon-wrap stat-icon-${color}`}>{icon}</div>
+        </div>
+        <div className="stat-value">{value}</div>
+        <div className="stat-sub">{sub}</div>
+      </div>
+    </div>
+  );
+}
+
+function ProgressRow({ label, value, pct, colorVar, trackVar }) {
+  return (
+    <div className="progress-row">
+      <div className="progress-meta">
+        <span className="progress-label">{label}</span>
+        <span className="progress-count">{value}</span>
+      </div>
+      <div className="progress-track" style={{ background: trackVar }}>
+        <div
+          className="progress-fill"
+          style={{ width: pct, background: `var(${colorVar})` }}
+        />
+      </div>
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const { user }   = useAuth();
   const navigate   = useNavigate();
@@ -43,83 +138,160 @@ export default function Dashboard() {
 
   if (loading) return <div className="spinner" />;
 
+  const hour    = new Date().getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+
   return (
-    <div className="fade">
+    <div className="dashboard fade">
+
+      {/* ── Page header ── */}
       <div className="page-header">
         <div className="page-header-text">
-          <h2>Welcome back, {user?.name} 👋</h2>
+          <h2>{greeting}, {user?.name} 👋</h2>
           <p>Here's what's happening in your DevFlow workspace today.</p>
+        </div>
+        <div className="header-actions">
+          <button className="action-btn" onClick={() => navigate("/app/projects")}>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ marginRight: 6 }}>
+              <path d="M7 1v12M1 7h12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+            </svg>
+            New Project
+          </button>
         </div>
       </div>
 
-      {/* Stats */}
+      {/* ── Stats grid ── */}
       <div className="stats-grid">
-        {[
-          { label: "Projects", value: stats.projects, sub: "Active workspaces",    color: "purple" },
-          { label: "Tasks",    value: stats.tasks,    sub: "Across all boards",    color: "pink"   },
-          { label: "Docs",     value: stats.docs,     sub: "Wiki pages",           color: "teal"   },
-          { label: "Repos",    value: stats.repos,    sub: "Linked repositories",  color: "amber"  },
-        ].map((s) => (
-          <div key={s.label} className={`stat-card ${s.color}`}>
-            <div className="stat-label">{s.label}</div>
-            <div className="stat-value">{s.value}</div>
-            <div className="stat-sub">{s.sub}</div>
-          </div>
+        {STAT_CONFIG.map((s, i) => (
+          <StatCard key={s.key} {...s} value={stats[s.key]} index={i} />
         ))}
       </div>
 
-      {/* Bottom grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+      {/* ── Bottom grid ── */}
+      <div className="dashboard-grid">
+
         {/* Recent Projects */}
         <div className="section-card">
-          <div className="section-title">Recent Projects</div>
-          {recentProjects.length === 0 ? (
-            <p style={{ fontSize: 13, color: "#b0a0cc" }}>No projects yet. <span style={{ color: "#9d50bb", cursor: "pointer" }} onClick={() => navigate("/app/projects")}>Create one →</span></p>
-          ) : (
-            recentProjects.map((p) => (
-              <div key={p._id} onClick={() => navigate("/app/tasks")}
-                style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: "1px solid #f5f0ff", cursor: "pointer" }}>
-                <div style={{ width: 36, height: 36, borderRadius: 9, background: p.color || "#f3eeff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>
-                  {p.icon || "🚀"}
-                </div>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: "#2d1b6e" }}>{p.name}</div>
-                  <div style={{ fontSize: 11, color: "#9d88bb" }}>{p.type || "Project"}</div>
-                </div>
+          <div className="section-header">
+            <div className="section-title">Recent Projects</div>
+            <button className="section-link" onClick={() => navigate("/app/projects")}>
+              View all →
+            </button>
+          </div>
+
+          <div className="project-list">
+            {recentProjects.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-icon">📁</div>
+                <p>No projects yet.</p>
+                <button className="ghost-btn" onClick={() => navigate("/app/projects")}>
+                  Create your first project
+                </button>
               </div>
-            ))
+            ) : (
+              recentProjects.map((p) => (
+                <div
+                  key={p._id}
+                  className="project-row"
+                  onClick={() => navigate("/app/tasks")}
+                  role="button"
+                  tabIndex={0}
+                >
+                  <div
+                    className="project-icon"
+                    style={{ background: p.color || "rgba(139,92,246,0.15)" }}
+                  >
+                    {p.icon || "🚀"}
+                  </div>
+                  <div className="project-info">
+                    <div className="project-name">{p.name}</div>
+                    <div className="project-type">{p.type || "Project"}</div>
+                  </div>
+                  <div className="project-arrow">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                      <path d="M5 3l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {recentProjects.length > 0 && (
+            <button className="action-btn" onClick={() => navigate("/app/projects")}>
+              View All Projects
+            </button>
           )}
-          <button className="action-btn" style={{ marginTop: 16, width: "100%" }} onClick={() => navigate("/app/projects")}>
-            View All Projects
-          </button>
         </div>
 
-        {/* Task Breakdown */}
+        {/* Task Overview + Quick Actions */}
         <div className="section-card">
-          <div className="section-title">Task Overview</div>
-          {[
-            { label: "Todo",        key: "todo",        color: "linear-gradient(90deg,#9d50bb,#6a11cb)", bg: "#f3eeff" },
-            { label: "In Progress", key: "inprogress",  color: "linear-gradient(90deg,#f59e0b,#fbbf24)", bg: "#fffbeb" },
-            { label: "Done",        key: "done",        color: "linear-gradient(90deg,#10b981,#34d399)", bg: "#f0fdf4" },
-          ].map((r) => (
-            <div key={r.key} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-              <span style={{ fontSize: 12, color: "#9d88bb", width: 76 }}>{r.label}</span>
-              <div style={{ flex: 1, height: 8, background: r.bg, borderRadius: 8, overflow: "hidden" }}>
-                <div style={{ width: pct(taskBreakdown[r.key]), height: "100%", background: r.color, borderRadius: 8, transition: "width 0.6s ease" }} />
-              </div>
-              <span style={{ fontSize: 12, fontWeight: 600, color: "#2d1b6e", width: 20 }}>{taskBreakdown[r.key]}</span>
-            </div>
-          ))}
+          <div className="section-header">
+            <div className="section-title">Task Overview</div>
+            <button className="section-link" onClick={() => navigate("/app/tasks")}>
+              See tasks →
+            </button>
+          </div>
 
-          <div style={{ borderTop: "1px solid #f0edf7", paddingTop: 16, marginTop: 4 }}>
-            <div className="section-title" style={{ marginBottom: 10 }}>Quick Actions</div>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <span className="badge badge-purple" style={{ cursor: "pointer", padding: "6px 14px" }} onClick={() => navigate("/app/tasks")}>+ New Task</span>
-              <span className="badge badge-pink"   style={{ cursor: "pointer", padding: "6px 14px" }} onClick={() => navigate("/app/docs")}>+ New Doc</span>
-              <span className="badge badge-teal"   style={{ cursor: "pointer", padding: "6px 14px" }} onClick={() => navigate("/app/repos")}>+ Add Repo</span>
+          <div className="progress-list">
+            {TASK_ROWS.map((r) => (
+              <ProgressRow
+                key={r.key}
+                label={r.label}
+                value={taskBreakdown[r.key]}
+                pct={pct(taskBreakdown[r.key])}
+                colorVar={r.colorVar}
+                trackVar={r.trackVar}
+              />
+            ))}
+          </div>
+
+          {/* Completion summary */}
+          <div className="completion-summary">
+            <div className="completion-ring-wrap">
+              <svg width="52" height="52" viewBox="0 0 52 52">
+                <circle cx="26" cy="26" r="20" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="5"/>
+                <circle
+                  cx="26" cy="26" r="20"
+                  fill="none"
+                  stroke="url(#doneGrad)"
+                  strokeWidth="5"
+                  strokeLinecap="round"
+                  strokeDasharray={`${Math.round((taskBreakdown.done / total) * 125.6)} 125.6`}
+                  transform="rotate(-90 26 26)"
+                />
+                <defs>
+                  <linearGradient id="doneGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#14b8a6"/>
+                    <stop offset="100%" stopColor="#6ee7b7"/>
+                  </linearGradient>
+                </defs>
+              </svg>
+              <span className="completion-pct">{pct(taskBreakdown.done)}</span>
+            </div>
+            <div className="completion-text">
+              <div className="completion-label">Completion rate</div>
+              <div className="completion-sub">{taskBreakdown.done} of {total} tasks done</div>
+            </div>
+          </div>
+
+          {/* Quick Actions */}
+          <div className="quick-actions">
+            <div className="quick-actions-title">Quick Actions</div>
+            <div className="quick-actions-row">
+              <button className="quick-btn quick-btn-purple" onClick={() => navigate("/app/tasks")}>
+                + Task
+              </button>
+              <button className="quick-btn quick-btn-pink" onClick={() => navigate("/app/docs")}>
+                + Doc
+              </button>
+              <button className="quick-btn quick-btn-teal" onClick={() => navigate("/app/repos")}>
+                + Repo
+              </button>
             </div>
           </div>
         </div>
+
       </div>
     </div>
   );
